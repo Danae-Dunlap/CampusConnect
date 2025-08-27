@@ -1,53 +1,62 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
-/*== STEP 1 ===============================================================
-The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any unauthenticated user can "create", "read", "update", 
-and "delete" any "Todo" records.
-=========================================================================*/
-const schema = a.schema({
-  Todo: a
+const userSchema = a.schema({
+  User: a
     .model({
-      content: a.string(),
+      user_id: a.integer(),
+      username: a.string(),
+      email: a.email(),
+      is_seller: a.boolean(),
+      storefront_id: a.integer(),
+      reviews: a.string(), //figure out how to change this to list
+      created_at: a.timestamp()
     })
-    .authorization((allow) => [allow.guest()]),
+    .authorization((allow) => [allow.owner()]),
 });
-
-export type Schema = ClientSchema<typeof schema>;
-
-export const data = defineData({
-  schema,
+export type UserSchema = ClientSchema<typeof userSchema>;
+export const userData = defineData({
+  schema: userSchema,
   authorizationModes: {
     defaultAuthorizationMode: 'identityPool',
   },
 });
 
-/*== STEP 2 ===============================================================
-Go to your frontend source code. From your client-side code, generate a
-Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
-WORK IN THE FRONTEND CODE FILE.)
+const storefrontSchema = a.schema({
+  Storefront: a
+    .model({
+      storefront_id: a.integer(),
+      owner_id: a.integer(), 
+      products: a.json(),
+      ratings: a.float(),
+      description: a.string(),
+      created_at: a.timestamp()
+    })
+    .authorization((allow) => [allow.owner()]),
+});
+export type StoreSchema = ClientSchema<typeof storefrontSchema>;
+export const storeData = defineData({
+  schema: storefrontSchema,
+  authorizationModes: {
+    defaultAuthorizationMode: 'identityPool',
+  },
+});
 
-Using JavaScript or Next.js React Server Components, Middleware, Server 
-Actions or Pages Router? Review how to generate Data clients for those use
-cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
-=========================================================================*/
-
-/*
-"use client"
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-
-const client = generateClient<Schema>() // use this Data client for CRUDL requests
-*/
-
-/*== STEP 3 ===============================================================
-Fetch records from the database and use them in your frontend component.
-(THIS SNIPPET WILL ONLY WORK IN THE FRONTEND CODE FILE.)
-=========================================================================*/
-
-/* For example, in a React component, you can use this snippet in your
-  function's RETURN statement */
-// const { data: todos } = await client.models.Todo.list()
-
-// return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>
+const reviewSchema = a.schema({
+  User: a
+    .model({
+      review_id: a.integer(),
+      reviewer_id: a.integer(),
+      storefront_id: a.integer(),
+      rating: a.integer(),
+      comment: a.string(),
+      created_at: a.timestamp()
+    })
+    .authorization((allow) => [allow.owner()]),
+});
+export type ReviewSchema = ClientSchema<typeof reviewSchema>;
+export const reviewData = defineData({
+  schema: reviewSchema,
+  authorizationModes: {
+    defaultAuthorizationMode: 'identityPool',
+  },
+});
