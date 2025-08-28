@@ -1,61 +1,55 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
-const userSchema = a.schema({
+const schema = a.schema({
   User: a
     .model({
-      user_id: a.integer(),
+      user_id: a.id().required(),
       username: a.string(),
       email: a.email(),
       is_seller: a.boolean(),
       storefront_id: a.integer(),
-      reviews: a.string(), //figure out how to change this to list
+      reviews: a.string().array(),
       created_at: a.timestamp()
     })
+    .identifier(['user_id'])
     .authorization((allow) => [allow.owner()]),
-});
-export type UserSchema = ClientSchema<typeof userSchema>;
-export const userData = defineData({
-  schema: userSchema,
-  authorizationModes: {
-    defaultAuthorizationMode: 'identityPool',
-  },
-});
-
-const storefrontSchema = a.schema({
-  Storefront: a
+    Storefront: a
     .model({
-      storefront_id: a.integer(),
-      owner_id: a.integer(), 
-      products: a.json(),
+      storefront_id: a.id().required(),
+      storefront_title: a.string().required(),
+      owner_id: a.hasOne('User', 'user_id'), 
+      products: a.id().array(),
       ratings: a.float(),
-      description: a.string(),
-      created_at: a.timestamp()
+      description: a.string().required(),
+      created_at: a.timestamp(),
     })
+    .identifier(['storefront_id'])
     .authorization((allow) => [allow.owner()]),
-});
-export type StoreSchema = ClientSchema<typeof storefrontSchema>;
-export const storeData = defineData({
-  schema: storefrontSchema,
-  authorizationModes: {
-    defaultAuthorizationMode: 'identityPool',
-  },
-});
-
-const reviewSchema = a.schema({
-  User: a
+    Review: a
     .model({
-      review_id: a.integer(),
-      reviewer_id: a.integer(),
-      storefront_id: a.integer(),
-      rating: a.integer(),
+      review_id: a.id().required(),
+      reviewer_id: a.hasOne('User', 'user_id'),
+      storefront_id: a.hasOne('Storefront', 'storefront_id'),
+      rating: a.integer().required(),
       comment: a.string(),
       created_at: a.timestamp()
     })
-    .authorization((allow) => [allow.owner()]),
+    .authorization((allow) => [allow.owner()])
+    .identifier(['review_id']),
+    Product: a.model({
+      product_id: a.id().required(),
+      description: a.string(),
+      price: a.float().required(),
+      isAvailable: a.boolean(),
+    })
+    .identifier(['product_id'])
+    .authorization((allow) => [allow.owner()])
 });
-export type ReviewSchema = ClientSchema<typeof reviewSchema>;
-export const reviewData = defineData({
-  schema: reviewSchema,
+
+export type Schema = ClientSchema<typeof schema>;
+
+export const data = defineData({
+  schema: schema,
   authorizationModes: {
     defaultAuthorizationMode: 'identityPool',
   },
