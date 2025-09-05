@@ -5,6 +5,7 @@ import type {UserProfile, Storefront, Review, Product} from './interface';
 
 const client = generateClient<Schema>()
 const now = new Date();
+const uuidv4 = require('uuid'); 
 
 export async function createUserProfile(user: UserProfile){
     const promise = client.models.User.create({
@@ -149,10 +150,8 @@ async function getReviews(id: string | undefined, type: string): Promise<Review[
 
 }
 
-
 export function generateId(): string{
-    const identification = 0;
-    return identification.toString();
+    return uuidv4();
 }
 
 
