@@ -1,7 +1,7 @@
 "use client"
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../../amplify/data/resource";
-import type {UserProfile, Storefront, Review} from './interface';
+import type {UserProfile, Storefront, Review, Product} from './interface';
 
 const client = generateClient<Schema>()
 const now = new Date();
@@ -12,7 +12,7 @@ export async function createUserProfile(user: UserProfile){
         username: user.username,
         email: user.email,
         is_seller: false,
-        storefront_id: -1,
+        storefront_id: generateId(),
         reviews: [],
         created_at: now.getTime(),
         }); 
@@ -43,7 +43,6 @@ export  async function createStorefront(store: Storefront){
     }
 }
 
-//Look into hasOne
 export async function createUserReview(review: Review){
     const promise = client.models.Review.create({
         review_id: generateId(),
@@ -62,41 +61,97 @@ export async function createUserReview(review: Review){
 }
 
 
-//Create custom query
-export async function getUserProfile(){
-
+export async function getUserProfile(username: string): Promise<UserProfile | undefined>{
+    try{
+        const promise = client.queries.fetchUser({username}); 
+        const user = (await promise).data; 
+        return {
+            user_id: user?.user_id || '',
+            username: user?.username || '', 
+            email: user?.email || '',
+            is_seller: user?.is_seller || false,
+            storefront_id: user?.storefront_id ? await getStorefront(user.storefront_id) : undefined,
+            reviews: await getReviews(user?.user_id, 'user') || undefined,
+            created_at: user?.created_at || 0,
+        }
+    }catch(error){
+        console.log('Error fetching user profile', error);
+    }
 }
 
-//Create custom query
-export async function getStorefront(storefront_id: string){
-    const promise = client.models.Storefront.get({storefront_id}); 
-
+export async function getStorefront(storefront_id: string): Promise<Storefront | undefined>{
+   
     try{
-        await promise;
+        const promise = client.models.Storefront.get({storefront_id});  
+        const store = (await promise).data;
+        return{
+            storefront_id: store!.storefront_id,
+            title: store!.storefront_title,
+            description: store!.description,
+            owner_id: store!.owner_id, 
+            rating: store?.ratings || -1,
+            products: await getProducts(store?.storefront_id) || [],
+        }
     }catch(error: unknown){
         console.log("Error fetching storefront: ", error); 
     }
 }
 
-//Create custom query
-export async function getStorefrontReviews(storefront_id: string){
-    const promise = client.models.Review.list();
-
+async function getProducts(storefront_id: string | undefined): Promise<Product[] | undefined>{
     try{
-        await promise;
-        const results = (await promise).data;
-        results.map((result: any) => {
-            return result.id
-        }); 
+        if(storefront_id !== undefined){
+            const promise = await client.queries.fetchProducts({storefront_id});
 
-    }catch(error: unknown){
-        console.log("Error fetching reviews for storefront", storefront_id, ". Error message: ", error); 
+            const results = (await promise).data;
+
+            const products = results?.map((product) => {
+                return{
+                    product_id: product!.product_id || '', 
+                    description: product!.description || '',
+                    price: product!.price,
+                    picture: product?.picture || '',
+                    is_available: product?.isAvailable || false,
+                }
+            });
+            return products;
+        }
     }
+    catch(error){
+        console.log('Error fetching products: ', error); 
+    }
+
 }
+
+async function getReviews(id: string | undefined, type: string): Promise<Review[] | undefined>{
+    try{
+        let promise: any;
+        if(type == 'user'){
+            promise = await client.queries.fetchReviews({user_id: id});
+        }else{
+            promise = await client.queries.fetchReviews({storefront_id: id})
+        }
+            const result = (await promise).data;
+
+           const reviews = result?.map((review: any) => {
+                return{
+                    review_id: review?.review_id || '',
+                    reviewer_id: review?.reviewer_id || '',
+                    storefront_id: review?.storefront_id || '',
+                    rating: review?.rating || -1,
+                    comment: review?.comment || '',
+                    created_at: review?.created_at || 0,
+                }
+           });
+           return reviews;
+    }catch(error){
+        console.log("Error fetching reviews: ", error); 
+    }
+
+}
+
 
 export function generateId(): string{
     const identification = 0;
-
     return identification.toString();
 }
 

@@ -4,7 +4,7 @@ export interface Review{
     storefront_id: string,
     rating: number,
     comment: string,
-    created_at: Date,
+    created_at: number,
 }
 
 export interface UserProfile{
@@ -12,17 +12,17 @@ export interface UserProfile{
     username: string,
     email: string,
     is_seller: boolean,
-    storefront_id?: string,
-    reviews: Review[],
-    created_at: Date,
+    storefront_id?: Storefront,
+    reviews?: Review[],
+    created_at: number,
 }
 
 export interface Product{
     product_id: string,
     description: string,
     price: number,
-    picture: string,
-    is_available: Date,
+    picture?: string,
+    is_available: boolean,
 }
 
 export interface Storefront{
@@ -30,7 +30,7 @@ export interface Storefront{
     title: string,
     owner_id: string,
     products: Product[]
-    rating: number,
+    rating?: number,
     description: string,
-    created_at: Date,
+    created_at?: Date,
 }
